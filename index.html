@@ -81,6 +81,8 @@ footer strong{color:var(--gold)}
  nav{display:none}.brand{width:100%}.logo{width:45px;height:45px}.logo-img{width:48px;height:48px}
 }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -217,24 +219,54 @@ footer strong{color:var(--gold)}
 </footer>
 
 <script>
-document.getElementById("applicationForm").addEventListener("submit",function(e){
+const SUPABASE_URL = "https://dzngixqdompgueenlima.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Y_7FiYB5p_ue1Yggk92pIA_qHN7Ik96";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+document.getElementById("applicationForm").addEventListener("submit", async function(e){
  e.preventDefault();
+ const formNotice=document.getElementById("formNotice");
  const phone=document.getElementById("sendTo").value;
+ const payload = {
+  student_name: document.getElementById("studentName").value.trim(),
+  dob: document.getElementById("dob").value,
+  gender: document.getElementById("gender").value,
+  class_apply: document.getElementById("classApply").value,
+  guardian_name: document.getElementById("guardian").value.trim(),
+  guardian_phone: document.getElementById("guardianPhone").value.trim(),
+  previous_school: document.getElementById("previousSchool").value.trim(),
+  address: document.getElementById("address").value.trim(),
+  additional_information: document.getElementById("additional").value.trim(),
+  status: "new"
+ };
+
+ formNotice.style.display="block";
+ formNotice.textContent="Saving application...";
+
+ const { error } = await supabaseClient.from("admission").insert([payload]);
+ if (error) {
+  console.error(error);
+  formNotice.textContent="The application could not be saved right now. Please try again or contact the school.";
+  return;
+ }
+
  const data = [
  "NEW ADMISSION APPLICATION",
  "EXCELLENCE Montessori Preparatory and Modern High School",
  "",
- "Student: "+document.getElementById("studentName").value,
- "Date of Birth: "+document.getElementById("dob").value,
- "Gender: "+document.getElementById("gender").value,
- "Class: "+document.getElementById("classApply").value,
- "Parent/Guardian: "+document.getElementById("guardian").value,
- "Guardian Phone: "+document.getElementById("guardianPhone").value,
- "Previous School: "+document.getElementById("previousSchool").value,
- "Address: "+document.getElementById("address").value,
- "Additional Information: "+document.getElementById("additional").value
- ].join("\n");
+ "Student: "+payload.student_name,
+ "Date of Birth: "+payload.dob,
+ "Gender: "+payload.gender,
+ "Class: "+payload.class_apply,
+ "Parent/Guardian: "+payload.guardian_name,
+ "Guardian Phone: "+payload.guardian_phone,
+ "Previous School: "+payload.previous_school,
+ "Address: "+payload.address,
+ "Additional Information: "+payload.additional_information
+ ].join("
+");
  const url="https://wa.me/"+phone+"?text="+encodeURIComponent(data);
+ formNotice.textContent="Application saved successfully. Opening WhatsApp...";
  window.open(url,"_blank");
 });
 </script>

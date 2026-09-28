@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Excellence Montessori — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#f4f7fb;margin:0;color:#172033}.wrap{max-width:1100px;margin:auto;padding:20px}.card{background:#fff;border-radius:16px;padding:20px;margin:16px 0;box-shadow:0 5px 20px #00000010}h1{margin:0 0 6px;color:#0b2a5b}.muted{color:#64748b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}input,button,select{font:inherit;padding:12px;border-radius:10px;border:1px solid #ccd5e1}button{cursor:pointer;background:#0b2a5b;color:#fff;border:0;font-weight:700}.danger{background:#7f1d1d}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:900px}th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}th{background:#f8fafc}.status{padding:8px;border-radius:8px}.hidden{display:none}.notice{padding:12px;border-radius:10px;background:#fff7df;margin-top:12px}.login{max-width:480px;margin:60px auto}@media(max-width:650px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="loginCard" class="card login">
+    <h1>School Admin</h1><p class="muted">Excellence Montessori Preparatory and Modern High School</p>
+    <div class="field"><label>Email</label><input id="email" type="email" value="excellencemontessori10@gmail.com" autocomplete="username"></div><br>
+    <div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password"></div><br>
+    <button id="loginBtn">Sign in</button><div id="loginNotice" class="notice hidden"></div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <div class="top"><div><h1>Admissions Dashboard</h1><p class="muted">Review applications submitted through the school website.</p></div><button id="logoutBtn" class="danger">Sign out</button></div>
+    <div class="card"><div class="top"><strong id="count">0 applications</strong><button id="refreshBtn">Refresh</button></div></div>
+    <div id="dashNotice" class="notice hidden"></div>
+    <div class="card table-wrap"><table><thead><tr><th>Date</th><th>Student</th><th>Class</th><th>Guardian</th><th>Phone</th><th>Previous School</th><th>Address</th><th>Additional Info</th><th>Status</th></tr></thead><tbody id="rows"></tbody></table></div>
+  </div>
+</div>
+<script>
+const SUPABASE_URL="https://dzngixqdompgueenlima.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_Y_7FiYB5p_ue1Yggk92pIA_qHN7Ik96";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
+const $=id=>document.getElementById(id);
+function notice(el,msg){el.textContent=msg;el.classList.remove('hidden')}
+function esc(v){return String(v??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+async function loadAdmissions(){
+  const {data,error}=await db.from('admission').select('*').order('created_at',{ascending:false});
+  if(error){notice($('dashNotice'),'Could not load applications: '+error.message);return;}
+  $('dashNotice').classList.add('hidden'); $('count').textContent=data.length+' application'+(data.length===1?'':'s');
+  $('rows').innerHTML=data.map(r=>`<tr><td>${esc(new Date(r.created_at).toLocaleString())}</td><td><strong>${esc(r.student_name)}</strong><br>${esc(r.dob)}<br>${esc(r.gender)}</td><td>${esc(r.class_apply)}</td><td>${esc(r.guardian_name)}</td><td>${esc(r.guardian_phone)}</td><td>${esc(r.previous_school)}</td><td>${esc(r.address)}</td><td>${esc(r.additional_information)}</td><td><select class="status" data-id="${esc(r.id)}"><option value="new" ${r.status==='new'?'selected':''}>New</option><option value="reviewed" ${r.status==='reviewed'?'selected':''}>Reviewed</option><option value="accepted" ${r.status==='accepted'?'selected':''}>Accepted</option><option value="rejected" ${r.status==='rejected'?'selected':''}>Rejected</option></select></td></tr>`).join('')||'<tr><td colspan="9">No applications yet.</td></tr>';
+  document.querySelectorAll('.status').forEach(s=>s.addEventListener('change',async e=>{const id=e.target.dataset.id;const status=e.target.value;const {error}=await db.from('admission').update({status}).eq('id',id);if(error){notice($('dashNotice'),'Status update failed: '+error.message);await loadAdmissions();}}));
+}
+async function showDashboard(){ $('loginCard').classList.add('hidden');$('dashboard').classList.remove('hidden');await loadAdmissions(); }
+db.auth.onAuthStateChange((event,session)=>{if(session)showDashboard();});
+$('loginBtn').onclick=async()=>{const {error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});if(error)notice($('loginNotice'),'Sign in failed: '+error.message);};
+$('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
+$('refreshBtn').onclick=loadAdmissions;
+(async()=>{const {data:{session}}=await db.auth.getSession();if(session)showDashboard()})();
+</script>
+</body></html>
