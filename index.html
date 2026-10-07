@@ -81,8 +81,6 @@ footer strong{color:var(--gold)}
  nav{display:none}.brand{width:100%}.logo{width:45px;height:45px}.logo-img{width:48px;height:48px}
 }
 </style>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -218,55 +216,51 @@ footer strong{color:var(--gold)}
  <p class="small">Lower Allentown, Freetown, Sierra Leone • Admissions 2026/2027</p>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://dzngixqdompgueenlima.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Y_7FiYB5p_ue1Yggk92pIA_qHN7Ik96";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const SUPABASE_URL="https://dzngixqdompgueenlima.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_Y_7FiYB5p_ue1Yggk92pIA_qHN7Ik96";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 
-document.getElementById("applicationForm").addEventListener("submit", async function(e){
+document.getElementById("applicationForm").addEventListener("submit",async function(e){
  e.preventDefault();
- const formNotice=document.getElementById("formNotice");
+ const notice=document.getElementById("formNotice");
+ notice.textContent="Submitting application...";
+ notice.className="notice";
  const phone=document.getElementById("sendTo").value;
- const payload = {
-  student_name: document.getElementById("studentName").value.trim(),
-  dob: document.getElementById("dob").value,
-  gender: document.getElementById("gender").value,
-  class_apply: document.getElementById("classApply").value,
-  guardian_name: document.getElementById("guardian").value.trim(),
-  guardian_phone: document.getElementById("guardianPhone").value.trim(),
-  previous_school: document.getElementById("previousSchool").value.trim(),
-  address: document.getElementById("address").value.trim(),
-  additional_information: document.getElementById("additional").value.trim(),
-  status: "new"
+ const application={
+   student_name:document.getElementById("studentName").value.trim(),
+   dob:document.getElementById("dob").value,
+   gender:document.getElementById("gender").value,
+   class_apply:document.getElementById("classApply").value,
+   guardian_name:document.getElementById("guardian").value.trim(),
+   guardian_phone:document.getElementById("guardianPhone").value.trim(),
+   previous_school:document.getElementById("previousSchool").value.trim(),
+   address:document.getElementById("address").value.trim(),
+   additional_information:document.getElementById("additional").value.trim(),
+   status:"new"
  };
-
- formNotice.style.display="block";
- formNotice.textContent="Saving application...";
-
- const { error } = await supabaseClient.from("admission").insert([payload]);
- if (error) {
-  console.error(error);
-  formNotice.textContent="The application could not be saved right now. Please try again or contact the school.";
-  return;
+ const {error}=await db.from("admission").insert([application]);
+ if(error){
+   notice.textContent="Application could not be saved. Please try again or contact the school. "+error.message;
+   return;
  }
-
  const data = [
  "NEW ADMISSION APPLICATION",
  "EXCELLENCE Montessori Preparatory and Modern High School",
  "",
- "Student: "+payload.student_name,
- "Date of Birth: "+payload.dob,
- "Gender: "+payload.gender,
- "Class: "+payload.class_apply,
- "Parent/Guardian: "+payload.guardian_name,
- "Guardian Phone: "+payload.guardian_phone,
- "Previous School: "+payload.previous_school,
- "Address: "+payload.address,
- "Additional Information: "+payload.additional_information
- ].join("
-");
+ "Student: "+application.student_name,
+ "Date of Birth: "+application.dob,
+ "Gender: "+application.gender,
+ "Class: "+application.class_apply,
+ "Parent/Guardian: "+application.guardian_name,
+ "Guardian Phone: "+application.guardian_phone,
+ "Previous School: "+application.previous_school,
+ "Address: "+application.address,
+ "Additional Information: "+application.additional_information
+ ].join("\n");
  const url="https://wa.me/"+phone+"?text="+encodeURIComponent(data);
- formNotice.textContent="Application saved successfully. Opening WhatsApp...";
+ notice.textContent="Application saved successfully. WhatsApp will now open so the parent/guardian can send a copy to the school.";
  window.open(url,"_blank");
 });
 </script>
